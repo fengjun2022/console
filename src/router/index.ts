@@ -23,7 +23,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import('@/pages/admin/dashboard/Dashboard.vue'),
         meta: { title: '首页', icon: 'HomeOutline' },
       },
-
+      {
+        name: 'bidDocumentReview',
+        path: 'bidDocumentReview',
+        component: () => import('@/pages/admin/bidDocumentReview/BidDocumentReview.vue'),
+        meta: { title: '招标文件审核', icon: 'HomeOutline' },
+      },
       {
         name: 'test',
         path: 'test',

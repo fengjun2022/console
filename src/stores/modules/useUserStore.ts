@@ -10,7 +10,7 @@ export const useUserStore = defineStore(
 
     const userName = ref("");
     const profie = ref("");
-    const token = ref<string | null>(null);
+    const token = ref<string | null>("null");
     const accountNumber = ref("");
     const id = ref<null | number>(null);
     const permission = ref("");

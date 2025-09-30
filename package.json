@@ -33,7 +33,9 @@
     "serve": "^14.2.1",
     "vue": "^3.5.21",
     "vue-i18n": "^9.6.2",
-    "vue-router": "^4.5.1"
+    "vue-pdf-embed": "1.2.1",
+    "vue-router": "^4.5.1",
+    "vue3-pdfjs": "^0.1.6"
   },
   "devDependencies": {
     "@intlify/unplugin-vue-i18n": "^1.5.0",

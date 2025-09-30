@@ -78,7 +78,7 @@ class Http {
         // 与后端协定的返回字段
         const { code, msg, data } = response.data;
         // 判断请求是否成功
-        const isSuccess = code === ResultEnum.SUCCESS;
+        const isSuccess = response.status === ResultEnum.SUCCESS;
         if (isSuccess) {
           return response.data;
         } else {

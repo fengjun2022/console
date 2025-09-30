@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
       // doc: https://github.com/pengzhanbo/vite-plugin-mock-dev-server
       proxy: {
         "/web-api": {
-          target: "http://127.0.0.1:8888",
+          target: "http://192.168.5.246:8080",
           // target: "http://139.196.53.82:8888",
           changeOrigin: true,
           rewrite: path => path.replace(/^\/web-api/, "")
