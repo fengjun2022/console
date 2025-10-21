@@ -1,87 +1,99 @@
-<template>
-  <div class="controls">
-    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
-    <span>{{ currentPage }} / {{ totalPages }}</span>
-    <button @click="nextPage" :disabled="currentPage === totalPages">下一页</button>
-  </div>
 
-  <div class="pdf-container" @scroll="handleScroll">
+<template>
+  <div class="pdf-container" ref="containerRef">
     <div v-if="loading" class="loading-indicator">加载中...</div>
-    <vue-pdf-embed
-      v-else
-      :source="source"
-      :page="currentPage"
-      @loaded="handleLoaded"
-      @error="(err) => console.error('PDF渲染错误', err)"
-    />
+    <div v-else class="pdf-pages-wrapper">
+      <div
+        v-for="p in totalPages"
+        :key="p"
+        class="pdf-page"
+        :ref="(el) => setPageRef(p, el as HTMLElement)"
+      >
+        <vue-pdf-embed
+          :source="source"
+          :page="p"
+          @rendered="onPageRendered"
+          @error="onPageError"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import VuePdfEmbed from 'vue-pdf-embed'
 import { createLoadingTask } from 'vue3-pdfjs'
 
-const source = ref({ url: '/static/test.pdf' })
-const currentPage = ref(1)
+const props = defineProps<{ url?: string | { url: string } }>()
+
+const source = ref<{ url: string } | string>(props.url || { url: '/static/test.pdf' })
 const totalPages = ref(0)
 const loading = ref(true)
-const lastScrollTop = ref(0)
-const scrollThreshold = ref(100) // 滚动阈值（像素）
+const pendingPage = ref<number | null>(null)
+const containerRef = ref<HTMLElement | null>(null)
+const pageElMap = new Map<number, HTMLElement>()
 
-// PDF加载完成回调
-const handleLoaded = (pdf) => {
-  totalPages.value = pdf.numPages
-  if (currentPage.value > totalPages.value) {
-    currentPage.value = totalPages.value || 1
+// （连续滚动模式无需单页 loaded 回调）
+
+function setPageRef(p: number, el?: HTMLElement) {
+  if (!el) return
+  pageElMap.set(p, el)
+}
+
+// 事件回调（可选）：避免未定义导致警告
+function onPageRendered() {
+  // no-op; 可按需记录渲染完成
+}
+function onPageError(err: unknown) {
+  // 简单控制台输出，避免未定义告警
+  // eslint-disable-next-line no-console
+  console.warn('PDF page render error:', err)
+}
+
+// 暴露外部跳转页码方法
+function goToPage(page: number) {
+  if (!page || page < 1) page = 1
+  if (!totalPages.value || loading.value) {
+    pendingPage.value = page
+    return
   }
-  loading.value = false
-}
-
-// 滚动翻页逻辑
-const handleScroll = (e) => {
-  const currentScrollTop = e.target.scrollTop
-  const scrollDelta = currentScrollTop - lastScrollTop.value
-
-  // 判断滚动方向
-  if (Math.abs(scrollDelta) > scrollThreshold.value) {
-    if (scrollDelta > 0 && currentPage.value < totalPages.value) {
-      nextPage()
-    } else if (scrollDelta < 0 && currentPage.value > 1) {
-      prevPage()
-    }
+  if (page > totalPages.value) page = totalPages.value
+  const el = pageElMap.get(page)
+  const container = containerRef.value
+  if (el && container) {
+    const top = el.offsetTop
+    container.scrollTo({ top, behavior: 'smooth' })
   }
-
-  lastScrollTop.value = currentScrollTop
 }
 
-// 翻页控制
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--
-}
+// 当传入的 url 变化时，重新加载 PDF
+watch(
+  () => props.url,
+  (val) => {
+    if (!val) return
+    source.value = typeof val === 'string' ? { url: val } : val
+    loading.value = true
+    const task = createLoadingTask((source.value as any).url || source.value)
+    task.promise
+      .then((pdf) => {
+        totalPages.value = pdf.numPages
+      })
+      .catch(console.error)
+      .finally(async () => {
+        loading.value = false
+        await nextTick()
+        if (pendingPage.value) {
+          goToPage(pendingPage.value)
+          pendingPage.value = null
+        }
+      })
+  },
+  { immediate: true }
+)
 
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++
-}
-
-// 备用加载方式
-onMounted(() => {
-  const task = createLoadingTask(source.value.url)
-  task.promise
-    .then((pdf) => {
-      totalPages.value = pdf.numPages
-      if (currentPage.value > totalPages.value) {
-        currentPage.value = totalPages.value || 1
-      }
-    })
-    .catch(console.error)
-    .finally(() => (loading.value = false))
-})
-
-// 键盘快捷键支持
+// 键盘快捷键支持（仅上下滚动）
 const handleKeydown = (e) => {
-  if (e.key === 'ArrowLeft') prevPage()
-  if (e.key === 'ArrowRight') nextPage()
   if (e.key === 'ArrowUp') scrollToTop()
   if (e.key === 'ArrowDown') scrollToBottom()
 }
@@ -91,41 +103,36 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
 
 // 辅助功能
 const scrollToTop = () => {
-  const container = document.querySelector('.pdf-container')
+  const container = containerRef.value
+  if (!container) return
   container.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const scrollToBottom = () => {
-  const container = document.querySelector('.pdf-container')
+  const container = containerRef.value
+  if (!container) return
   container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
 }
+
+defineExpose({ goToPage })
 </script>
 
 <style scoped>
-.controls {
-  position: sticky;
-  top: 0;
-  background: white;
-  padding: 10px 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
 .pdf-container {
-  height: calc(100vh - 230px); /* 留出控制栏高度 */
+  height: calc(100vh - 160px);
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   border: 1px solid #eee;
   border-radius: 4px;
+  padding: 8px;
 }
 
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.pdf-page { margin-bottom: 8px; display: block; }
+.pdf-page :deep(canvas) {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
 }
 
 .loading-indicator {

@@ -49,10 +49,126 @@ export function tenderQueryAdd<T>(data: any): Promise<Result<T>> {
     })
 }
 
-// 根据ID删除单条记录
-export function tenderDelById<T>(id: any): Promise<Result<T>> {
-    return http.request({
-        url: `/api/tender/delById/${id}`,
-        method: 'DELETE',
-    })
+
+
+// 书籍管理相关
+export function selectBooks<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/book/query',
+    method: 'POST',
+    data
+  })
 }
+
+export function addNewBooks<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/book/add',
+    method: 'PUT',
+    data
+  })
+}
+
+export function updateBooks<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/book/update',
+    method: 'POST',
+    data
+  })
+}
+
+export function delBookAndCourseAndWord<T>(data: { id: string | number }): Promise<Result<T>> {
+  return http.request({
+    url: `/api/book/delById/${data.id}`,
+    method: 'DELETE'
+  })
+}
+
+export function getSelectBooks<T>(data?: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/book/select',
+    method: 'POST',
+    data
+  })
+}
+
+// 课程管理相关
+export function selectCourse<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/course/query',
+    method: 'POST',
+    data
+  })
+}
+
+export function addNewCourses<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/course/add',
+    method: 'PUT',
+    data
+  })
+}
+
+export function delCourseAndWord<T>(data: { id: string | number }): Promise<Result<T>> {
+  return http.request({
+    url: `/api/course/delById/${data.id}`,
+    method: 'DELETE'
+  })
+}
+
+export function getCourseBooks<T>(data: { courseId: string | number }): Promise<Result<T>> {
+  return http.request({
+    url: '/api/course/books',
+    method: 'POST',
+    data
+  })
+}
+
+// 单词（词-音频映射）相关
+export function getWordsAll<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/word/query',
+    method: 'POST',
+    data
+  })
+}
+
+export function addWords<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/word/add',
+    method: 'PUT',
+    data
+  })
+}
+
+export function updateWord<T>(data: any): Promise<Result<T>> {
+  return http.request({
+    url: '/api/word/update',
+    method: 'POST',
+    data
+  })
+}
+
+export function delWord<T>(data: { id: string | number }): Promise<Result<T>> {
+  return http.request({
+    url: `/api/word/delById/${data.id}`,
+    method: 'DELETE'
+  })
+}
+
+export function getTemplateList<T>(): Promise<Result<T>> {
+  return http.request({
+    url: `/tem/tem_list`,
+    method: "GET",
+  });
+}
+
+export function getTemplateSearchList<T>(params: any): Promise<Result<T>> {
+  return http.request({
+    url: `/tem/search_list`,
+    method: "GET",
+    params
+  });
+}
+
+
+

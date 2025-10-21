@@ -17,12 +17,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { breadcrumb: false },   // ✅ 不显示在面包屑
 
     children: [
-      {
-        name: 'dashboard',
-        path: 'dashboard',
-        component: () => import('@/pages/admin/dashboard/Dashboard.vue'),
-        meta: { title: '首页', icon: 'HomeOutline' },
-      },
+      // {
+      //   name: 'dashboard',
+      //   path: 'dashboard',
+      //   component: () => import('@/pages/admin/dashboard/Dashboard.vue'),
+      //   meta: { title: '首页', icon: 'HomeOutline' },
+      // },
       {
         name: 'bidDocumentReview',
         path: 'bidDocumentReview',
@@ -30,35 +30,41 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '招标文件审核', icon: 'HomeOutline' },
       },
       {
-        name: 'test',
-        path: 'test',
-        meta: { title: '测试', icon: 'SettingsOutline' },
-        redirect: { name: 'test1' },
-        children: [{
-          name: 'test1',
-          path: 'test1',
-          component: () => import('@/pages/system/pages/test1.vue'),
-          meta: { title: '测试1' },
-        },
-        {
-          name: 'test2',
-          path: 'test2',
-          component: () => import('@/pages/system/pages/test2.vue'),
-          meta: { title: '测试3' },
-        },
-        {
-          name: 'pdf-editor',
-          path: 'pdf-editor',
-          component: () => import('@/pages/system/pages/pdf-editor.vue'),
-          meta: { title: 'PDF编辑器' },
-        },
-        {
-          name: 'course-management',
-          path: 'course-management',
-          component: () => import('@/pages/system/pages/course-management.vue'),
-          meta: { title: '课程管理' },
-        }]
+        name: 'bidDocumentReviewView',
+        path: 'bidDocumentReview/view',
+        component: () => import('@/pages/admin/bidDocumentReview/ReviewView.vue'),
+        meta: { breadcrumb: true },
       },
+      // {
+      //   name: 'test',
+      //   path: 'test',
+      //   meta: { title: '测试', icon: 'SettingsOutline' },
+      //   redirect: { name: 'test1' },
+      //   children: [{
+      //     name: 'test1',
+      //     path: 'test1',
+      //     component: () => import('@/pages/system/pages/test1.vue'),
+      //     meta: { title: '测试1' },
+      //   },
+      //   {
+      //     name: 'test2',
+      //     path: 'test2',
+      //     component: () => import('@/pages/system/pages/test2.vue'),
+      //     meta: { title: '测试3' },
+      //   },
+      //   {
+      //     name: 'pdf-editor',
+      //     path: 'pdf-editor',
+      //     component: () => import('@/pages/system/pages/pdf-editor.vue'),
+      //     meta: { title: 'PDF编辑器' },
+      //   },
+      //   {
+      //     name: 'course-management',
+      //     path: 'course-management',
+      //     component: () => import('@/pages/system/pages/course-management.vue'),
+      //     meta: { title: '课程管理' },
+      //   }]
+      // },
     ],
   },
   {

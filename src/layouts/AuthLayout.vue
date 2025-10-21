@@ -7,7 +7,7 @@
           <!-- 左侧背景区域 -->
           <div class="w-2/5 bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
             <div class="text-center text-white">
-              <h1 class="text-4xl font-bold mb-4">知音控制台</h1>
+              <h1 class="text-4xl font-bold mb-4">南京中西医医院招标AI智能审核系统</h1>
               <p class="text-xl opacity-90">一站式管理平台</p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="pdf-container">
     <div class="container-left">
-      <PdfPreview />
+      <PdfPreview ref="pdfRef" :url="pdfUrl" />
     </div>
     <div class="container-right">
       <div class="templateName nameColor">模版一：软件采购</div>
@@ -23,32 +23,31 @@
             </div>
           </div>
         </div>
-        <div class="divMB10">根据审核模版一，一共匹配12个问题，其中匹配正确的有6条，错误的有6条:</div>
+        <div class="divMB10">根据审核结果统计：共 {{ totalCount }} 条，符合项 {{ conformingCount }} 条，不符合项 {{ riskyCount }} 条</div>
         <div class="displayFlex divMB10">
-          <div @click="isConforming = true"><n-tag :type="isConforming ? 'info' : ''"> 符合项(3) </n-tag></div>
+          <div @click="isConforming = true"><n-tag :type="isConforming ? 'info' : ''"> 符合项({{ conformingCount }}) </n-tag></div>
           <div class="marginLeft20" @click="isConforming = false">
-            <n-tag :type="!isConforming ? 'info' : ''"> 不符合项(3) </n-tag>
+            <n-tag :type="!isConforming ? 'info' : ''"> 不符合项({{ riskyCount }}) </n-tag>
           </div>
         </div>
-        <div v-for="index in 5" :key="index" class="mian-item">
+        <div v-for="(item, idx) in (isConforming ? conforming : risky)" :key="`${item?.id ?? 'row'}-${idx}`" class="mian-item">
           <div style="padding: 10px">
             <n-collapse :default-expanded-names="['1']">
-              <n-collapse-item
-                title="1.建议五防系统(独立五防)、川型网路安全装置在新工程中应更换，不再继续使用。"
-                name="1"
-              >
+              <n-collapse-item :title="(idx + 1) + '. ' + (item.question || '问题')" name="1">
+                <div class="kv"><span class="k">识别结果：</span><span class="v">{{ item.result }}</span></div>
+                <div class="kv"><span class="k">结论：</span><span class="v">{{ item.comparison }}</span></div>
                 <n-collapse>
-                  <n-collapse-item title="规则提问:" name="1">
-                    <div>
-                      根据《变电工程强制性条文》中提到在建设新工程时，五防系统、I型网路安全装置应当更换，不再继续使用。
-                    </div>
-                  </n-collapse-item>
-                  <n-collapse-item title="共2处引用" name="2">
-                    <div class="divMB10">
-                      <n-icon> <Attach /> </n-icon>《新建变电站工程可行性研究报告》第1页中提到在建设新工程时，设备应更换
-                    </div>
-                    <div class="divMB10">
-                      <n-icon> <Attach /> </n-icon>《新建变电站工程可行性研究报告》第1页中提到在建设新工程时，设备应更换
+                  <n-collapse-item title="引用" name="ref">
+                    <div class="refs">
+                      <div
+                        v-for="(refItem, rIdx) in (item.referenceObject || [])"
+                        :key="`${refItem?.chunkId ?? 'ref'}-${rIdx}`"
+                        class="ref-item"
+                        @click="jumpTo(refItem)"
+                      >
+                        <div class="ref-text" v-html="sanitizeHtml(refItem.chunkText)"></div>
+                        <div class="ref-page">第 {{ refItem.minPage === refItem.maxPage ? refItem.minPage : (refItem.minPage + '-' + refItem.maxPage) }} 页</div>
+                      </div>
                     </div>
                   </n-collapse-item>
                 </n-collapse>
@@ -72,7 +71,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { NIcon, NTag, NCollapse, NCollapseItem } from 'naive-ui'
 import {
   RefreshOutline,
@@ -80,48 +79,82 @@ import {
   EllipsisHorizontal,
   HeartCircleOutline,
   HeartDislikeCircleOutline,
-  Attach,
 } from '@vicons/ionicons5'
-import { ref, h } from 'vue'
+import { ref, h, computed } from 'vue'
 import PdfPreview from './PDF.vue'
+const props = defineProps<{ pdfUrl?: string, results?: Array<any> }>()
 
+const pdfRef = ref<any>(null)
 const isConforming = ref(true)
-const questions = ref([
-  {
-    title: '建议五防系统（独立五防）、II型网路安全装置在新工程中应更换，不再继续使用。',
-    rule: '根据《变电工程强制性条文》中提到在建设新工程时，五防系统、II型网路安全装置应当更换，不再继续使用。',
-    references: [
-      '《新建变电站工程可行性研究报告》第1页中提到在建设新工程时，设备应更换。',
-      '《新建变电站工程可行性研究报告》第1页中提到在建设新工程时，设备应更换。',
-    ],
-  },
-  {
-    title: '变电站的负荷电力标准，应根据电力系统规划设计的范围来进行，范围按照国家电力标准文件GB 19517-2023执行。',
-    rule: '判断依据',
-    references: ['共2处引用'],
-  },
-])
+
+const conforming = computed(() => (props.results || []).filter((x) => x?.result === '满足'))
+// 将“风险”和“未通过”均归入不符合项，避免漏展示
+const risky = computed(() => (props.results || []).filter((x) => x?.result === '风险' || x?.result === '未通过'))
+const conformingCount = computed(() => conforming.value.length)
+const riskyCount = computed(() => risky.value.length)
+const totalCount = computed(() => (props.results || []).length)
+
+function jumpTo(refItem: any) {
+  const base = (refItem?.minPage ?? refItem?.maxPage ?? 1)
+  const page = Number(base) + 1
+  pdfRef.value?.goToPage?.(page)
+}
+
+// 简单 HTML 清洗：移除可能破坏布局的标签，
+// 并将 table/tr/td 等替换为 div，避免未闭合表格导致后续项被吞掉
+function sanitizeHtml(html: string) {
+  if (!html) return ''
+  try {
+    let s = String(html)
+    // 移除危险标签
+    s = s.replace(/<\/?(script|style|iframe)[^>]*>/gi, '')
+    // 将 table 相关标签替换为 div，尽量保证结构闭合
+    s = s
+      .replace(/<\/?(thead|tbody|tfoot)[^>]*>/gi, '')
+      .replace(/<\/?table([^>]*)>/gi, (m) => (m.startsWith('</') ? '</div>' : '<div>'))
+      .replace(/<\/?tr([^>]*)>/gi, (m) => (m.startsWith('</') ? '</div>' : '<div>'))
+      .replace(/<\/?t[hd]([^>]*)>/gi, (m) => (m.startsWith('</') ? '</div>' : '<div>'))
+    return s
+  } catch (e) {
+    return String(html)
+  }
+}
 </script>
 <style scoped>
 .pdf-container {
   display: flex;
+  gap: 12px;
+  align-items: stretch;
+  padding-bottom: 20px;
 }
 .container-left {
   flex: 1;
-  border-right: 1px solid #999;
   padding: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(23, 28, 33, 0.05);
+  overflow: hidden;
 }
 .container-right {
   flex: 1;
   padding: 10px;
   height: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(23, 28, 33, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 .container-right-main {
-  border: 1px solid #999;
-  border-radius: 5px;
+  border: none;
+  border-radius: 8px;
   padding: 10px;
-  height: 55%;
+  height: calc(100vh - 200px);
   overflow-y: auto;
+  background: transparent;
 }
 
 .container-right-main-header {
@@ -144,14 +177,14 @@ const questions = ref([
   color: #229afd;
 }
 .mian-item {
-  border-color: #999;
-  border: 1px solid #999;
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
-.mian-item :hover {
-  background-color: #e0f1ff;
-  border-radius: 10px;
+.mian-item:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 .displayFlex {
@@ -169,4 +202,15 @@ const questions = ref([
 .nameColor {
   color: #229afd;
 }
+
+.kv { margin: 6px 0; line-height: 1.6; }
+.kv .k { color: #666; }
+.kv .v { color: #333; }
+.refs { margin-top: 4px; }
+.ref-item { padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; cursor: pointer; }
+.ref-item:hover { background-color: #f6faff; border-color: #cfe8ff; }
+.ref-text { color: #333; white-space: pre-wrap; }
+.ref-page { margin-top: 4px; color: #999; font-size: 12px; }
+.ref-text :deep(*) { max-width: 100%; word-break: break-word; }
+.ref-item :deep(a) { pointer-events: none; }
 </style>

@@ -13,7 +13,7 @@
     >
       <NFormItem path="accountNumber" label="账号">
         <NInput
-          v-model:value="formData.accountNumber"
+          v-model:value="formData.username"
           placeholder="请输入账号"
           size="large"
         />
@@ -83,13 +83,13 @@ const showPassword = ref(false)
 const loading = ref(false)
 
 const formData = reactive({
-  accountNumber: '',
+  username: '',
   password: '',
   keepLoggedIn: false,
 })
 
 const rules: FormRules = {
-  accountNumber: [
+  username: [
     { required: true, message: '请输入账号' }
   ],
   password: [
@@ -104,7 +104,7 @@ const submit = async () => {
       loading.value = true
       try {
         const res = await userLogin<any>({
-          accountNumber: formData.accountNumber,
+          username: formData.username,
           password: formData.password
         })
 

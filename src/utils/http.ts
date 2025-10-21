@@ -10,6 +10,7 @@ import { ContentTypeEnum, ResultEnum } from "@/enums/requestEnum";
 import { useUserStore } from "@/stores/modules/useUserStore"
 import router from "@/router";
 import { useMessage } from 'naive-ui'
+import { Result } from '@/type'
 
 const message = useMessage()
 // 默认 axios 实例请求配置
@@ -76,64 +77,31 @@ class Http {
       (response: AxiosResponse) => {
         // NProgress.done();
         // 与后端协定的返回字段
-        const { code, msg, data } = response.data;
+        const { code, msg } = response.data;
         // 判断请求是否成功
-        const isSuccess = response.status === ResultEnum.SUCCESS;
+        const isSuccess = code === ResultEnum.SUCCESS;
         if (isSuccess) {
           return response.data;
         } else {
-          // 处理请求错误
-          message.error(msg);
-          return response.data;
+            message.error(msg);
+            return response.data
         }
       },
-      (error: AxiosError) => {
+      (error: any) => {
+        console.log(error);
         const userStore = useUserStore();
         // NProgress.done();
         // 处理 HTTP 网络错误
-        let msg = "";
+        let msg = error.response?.data.msg;
         // HTTP 状态码
-        const status = error.response?.status;
-        switch (status) {
-          case 400:
-            msg = "请求错误";
-            break;
-          case 401:
-            msg = (error as  any).response?.data["msg"];
-            userStore.cleanUserInfo();
-            router.push("/login");
-            break;
-          case 403:
-            msg = "拒绝访问";
-            break;
-          case 404:
-            msg = `请求地址出错: ${error.response?.config?.url}`;
-            break;
-          case 408:
-            msg = "请求超时";
-            break;
-          case 500:
-            msg = "服务器内部错误";
-            break;
-          case 501:
-            msg = "服务未实现";
-            break;
-          case 502:
-            msg = "网关错误";
-            break;
-          case 503:
-            msg = "服务不可用";
-            break;
-          case 504:
-            msg = "网关超时";
-            break;
-          case 505:
-            msg = "HTTP版本不受支持";
-            break;
-          default:
-            msg = "网络连接故障";
+        const status = error.response?.data.code;
+        // 处理请求错误
+        if (status==4001) {
+          userStore.cleanUserInfo();
+          router.push("/login");
+          message.error(msg);
+          return Promise.reject(error.response?.data);
         }
-
         message.error(msg);
         return Promise.reject(error);
       }

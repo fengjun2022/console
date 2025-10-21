@@ -12,9 +12,10 @@ export const useUserStore = defineStore(
     const profie = ref("");
     const token = ref<string | null>("null");
     const accountNumber = ref("");
-    const id = ref<null | number>(null);
+    const userId = ref<null | number>(null);
     const permission = ref("");
     const personalizedSignature = ref('人生是旷野，去追寻风和自由吧')
+
 
 
 
@@ -34,12 +35,12 @@ export const useUserStore = defineStore(
         token.value = userInfo.token;
       }
       accountNumber.value = userInfo.accountNumber;
-      id.value = userInfo.id;
+      userId.value = userInfo.userId;
 
     };
 
     const getUserInfoData = async () => {
-      const res = await getUserInfo<any>({ id: id.value });
+      const res = await getUserInfo<any>({ userId: userId.value });
       if (res.code !== 200) return;
       setUserInfo(res.data);
     };
@@ -49,8 +50,7 @@ export const useUserStore = defineStore(
       profie.value = "";
       token.value = null;
       accountNumber.value = "";
-      id.value = null;
-      id.value = null;
+      userId.value = null;
       permission.value = "";
       removeFromLocalStorage("userInfo");
     };
@@ -63,7 +63,7 @@ export const useUserStore = defineStore(
       profie,
       token,
       accountNumber,
-      id,
+      userId,
       personalizedSignature,
 
       getUserInfoData,
